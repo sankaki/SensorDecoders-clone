@@ -53,6 +53,11 @@ function milesightDeviceDecode(bytes) {
             decoded.firmware_version = readFirmwareVersion(bytes.slice(i, i + 2));
             i += 2;
         }
+        // TSL VERSION
+        else if (channel_id === 0xff && channel_type === 0xff) {
+            decoded.tsl_version = readFirmwareVersion(bytes.slice(i, i + 2));
+            i += 2;
+        }
         // TEMPERATURE
         else if (channel_id === 0x03 && channel_type === 0x67) {
             decoded.temperature = readInt16LE(bytes.slice(i, i + 2)) / 10;
@@ -87,6 +92,16 @@ function milesightDeviceDecode(bytes) {
         else if (channel_id === 0x08 && channel_type === 0x8e) {
             decoded.system_status = readSystemStatus(bytes[i]);
             i += 1;
+        }
+        // HUMIDITY
+        else if (channel_id === 0x09 && channel_type === 0x68) {
+            decoded.humidity = readUInt8(bytes[i]) / 2;
+            i += 1;
+        }
+        // RELAY STATUS
+        else if (channel_id === 0x0a && channel_type === 0x8f) {
+            decoded.wires_relay = readWiresRelay(bytes.slice(i, i + 2));
+            i += 2;
         }
         // PLAN
         else if (channel_id === 0xff && channel_type === 0xc9) {
@@ -126,6 +141,11 @@ function milesightDeviceDecode(bytes) {
             decoded.temperature_ctl_mode_enable = readTemperatureCtlModeEnable(bytes[i]);
             decoded.temperature_ctl_status_enable = readTemperatureCtlStatusEnable(bytes[i + 1], bytes[i + 2]);
             i += 3;
+        }
+        // CONTROL PERMISSIONS
+        else if (channel_id === 0xff && channel_type === 0xf6) {
+            decoded.control_permissions = bytes[i] === 1 ? "remote control" : "thermostat";
+            i += 1;
         }
         // TEMPERATURE ALARM
         else if (channel_id === 0x83 && channel_type === 0x67) {
@@ -412,6 +432,33 @@ function readWires(wire1, wire2, wire3) {
     }
 
     return wire;
+}
+
+
+function readWiresRelay(bytes) {
+    var relay = [];
+    if ((bytes[0] >>> 0) & 0x01) {
+        relay.push("Y1");
+    }
+    if ((bytes[0] >>> 1) & 0x01) {
+        relay.push("Y2/GL");
+    }
+    if ((bytes[0] >>> 2) & 0x01) {
+        relay.push("W1");
+    }
+    if ((bytes[0] >>> 3) & 0x01) {
+        relay.push("W2/AUX");
+    }
+    if ((bytes[0] >>> 4) & 0x01) {
+        relay.push("E");
+    }
+    if ((bytes[0] >>> 5) & 0x01) {
+        relay.push("G");
+    }
+    if ((bytes[0] >>> 6) & 0x01) {
+        relay.push("O/B");
+    }
+    return relay;
 }
 
 function readObMode(type) {
