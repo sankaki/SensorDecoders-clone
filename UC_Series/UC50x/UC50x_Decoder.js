@@ -90,44 +90,30 @@ function milesightDeviceDecode(bytes) {
         else if (includes(adc_chns, channel_id) && channel_type === 0xe2) {
             var adc_channel_name = "adc_" + (channel_id - adc_chns[0] + 1);
             var value = readFloat16LE(bytes.slice(i, i + 2));
-            if (value === -65504) {
-                decoded[adc_channel_name + "_error"] = "overload";
-            } else {
-                decoded[adc_channel_name] = readFloat16LE(bytes.slice(i, i + 2));
-                decoded[adc_channel_name + "_min"] = readFloat16LE(bytes.slice(i + 2, i + 4));
-                decoded[adc_channel_name + "_max"] = readFloat16LE(bytes.slice(i + 4, i + 6));
-                decoded[adc_channel_name + "_avg"] = readFloat16LE(bytes.slice(i + 6, i + 8));
-            }
+            decoded[adc_channel_name] = readFloat16LE(bytes.slice(i, i + 2));
+            decoded[adc_channel_name + "_min"] = readFloat16LE(bytes.slice(i + 2, i + 4));
+            decoded[adc_channel_name + "_max"] = readFloat16LE(bytes.slice(i + 4, i + 6));
+            decoded[adc_channel_name + "_avg"] = readFloat16LE(bytes.slice(i + 6, i + 8));
             i += 8;
         }
         // ADC ALARM (UC50x v3)
         else if (includes(adc_alarm_chns, channel_id) && channel_type === 0xe2) {
             var adc_channel_name = "adc_" + (channel_id - adc_alarm_chns[0] + 1);
-            var value = readFloat16LE(bytes.slice(i, i + 2));
-            if (value === -65504) {
-                decoded[adc_channel_name + "_error"] = "overload";
-            } else {
-                decoded[adc_channel_name] = readFloat16LE(bytes.slice(i, i + 2));
-                decoded[adc_channel_name + "_min"] = readFloat16LE(bytes.slice(i + 2, i + 4));
-                decoded[adc_channel_name + "_max"] = readFloat16LE(bytes.slice(i + 4, i + 6));
-                decoded[adc_channel_name + "_avg"] = readFloat16LE(bytes.slice(i + 6, i + 8));
-            }
+            decoded[adc_channel_name] = readFloat16LE(bytes.slice(i, i + 2));
+            decoded[adc_channel_name + "_min"] = readFloat16LE(bytes.slice(i + 2, i + 4));
+            decoded[adc_channel_name + "_max"] = readFloat16LE(bytes.slice(i + 4, i + 6));
+            decoded[adc_channel_name + "_avg"] = readFloat16LE(bytes.slice(i + 6, i + 8));
             decoded[adc_channel_name + "_alarm"] = readAlarm(bytes[i + 8]);
             i += 9;
         }
         // ADC CHANGE ALARM (UC50x v3)
         else if (includes(adc_change_alarm_chns, channel_id) && channel_type === 0xe2) {
             var adc_channel_name = "adc_" + (channel_id - adc_change_alarm_chns[0] + 1);
-            var value = readFloat16LE(bytes.slice(i, i + 2));
-            if (value === -65504) {
-                decoded[adc_channel_name + "_error"] = "overload";
-            } else {
-                decoded[adc_channel_name] = readFloat16LE(bytes.slice(i, i + 2));
-                decoded[adc_channel_name + "_min"] = readFloat16LE(bytes.slice(i + 2, i + 4));
-                decoded[adc_channel_name + "_max"] = readFloat16LE(bytes.slice(i + 4, i + 6));
-                decoded[adc_channel_name + "_avg"] = readFloat16LE(bytes.slice(i + 6, i + 8));
-                decoded[adc_channel_name + "_change"] = readFloatLE(bytes.slice(i + 8, i + 12));
-            }
+            decoded[adc_channel_name] = readFloat16LE(bytes.slice(i, i + 2));
+            decoded[adc_channel_name + "_min"] = readFloat16LE(bytes.slice(i + 2, i + 4));
+            decoded[adc_channel_name + "_max"] = readFloat16LE(bytes.slice(i + 4, i + 6));
+            decoded[adc_channel_name + "_avg"] = readFloat16LE(bytes.slice(i + 6, i + 8));
+            decoded[adc_channel_name + "_change"] = readFloatLE(bytes.slice(i + 8, i + 12));
             decoded[adc_channel_name + "_alarm"] = readAlarm(bytes[i + 12]);
             i += 13;
         }
@@ -142,8 +128,7 @@ function milesightDeviceDecode(bytes) {
             var modbus_chn_id = bytes[i++] - 6;
             var package_type = bytes[i++];
             var data_type = package_type & 0x07; // 0x07 = 0b00000111
-            var date_length = package_type >> 3;
-            var chn = "chn_" + modbus_chn_id;
+            var chn = "modbus_chn_" + modbus_chn_id;
             switch (data_type) {
                 case 0:
                     decoded[chn] = bytes[i] ? "on" : "off";
@@ -186,10 +171,80 @@ function milesightDeviceDecode(bytes) {
         }
         // MODBUS READ ERROR
         else if (channel_id === 0xff && channel_type === 0x15) {
-            var modbus_error_chn_id = bytes[i] - 6;
-            var channel_name = "modbus_chn_" + modbus_error_chn_id;
-            decoded[channel_name + "_alarm"] = "read error";
+            var modbus_chn_id = bytes[i] - 6;
+            var channel_name = "modbus_chn_" + modbus_chn_id;
+            decoded[channel_name + "_exception"] = "read error";
             i += 1;
+        }
+        // MODBUS(New Version)
+        else if ((channel_id === 0x09 || channel_id === 0x89 || channel_id === 0x99) && channel_type === 0xf3) {
+            var modbus_chn_id = bytes[i++] + 1;
+            var package_type = bytes[i++];
+            var sign = package_type >>> 7;
+            var data_type = package_type & 0x0f; // 0x0F = 0b00001111
+            var modbus_chn_name = "modbus_chn_" + modbus_chn_id;
+            switch (data_type) {
+                case 0:
+                case 1:
+                    decoded[modbus_chn_name] = bytes[i];
+                    i += 1;
+                    break;
+                case 2:
+                case 3:
+                    decoded[modbus_chn_name] = sign ? readInt16LE(bytes.slice(i, i + 2)) : readUInt16LE(bytes.slice(i, i + 2));
+                    i += 2;
+                    break;
+                case 4:
+                case 6:
+                    decoded[modbus_chn_name] = sign ? readInt32LE(bytes.slice(i, i + 4)) : readUInt32LE(bytes.slice(i, i + 4));
+                    i += 4;
+                    break;
+                case 5:
+                case 7:
+                    decoded[modbus_chn_name] = readFloatLE(bytes.slice(i, i + 4));
+                    i += 4;
+                    break;
+                default:
+                    throw new Error("Unknown data type");
+            }
+
+            var modbus_change_chn_name = modbus_chn_name + "_change";
+            if (channel_id === 0x99) {
+                switch (data_type) {
+                    case 0:
+                    case 1:
+                        decoded[modbus_change_chn_name] = bytes[i];
+                        i += 1;
+                        break;
+                    case 2:
+                    case 3:
+                        decoded[modbus_change_chn_name] = sign ? readInt16LE(bytes.slice(i, i + 2)) : readUInt16LE(bytes.slice(i, i + 2));
+                        i += 2;
+                        break;
+                    case 4:
+                    case 6:
+                        decoded[modbus_change_chn_name] = sign ? readInt32LE(bytes.slice(i, i + 4)) : readUInt32LE(bytes.slice(i, i + 4));
+                        i += 4;
+                        break;
+                    case 5:
+                    case 7:
+                        decoded[modbus_change_chn_name] = readFloatLE(bytes.slice(i, i + 4));
+                        i += 4;
+                        break;
+                }
+                decoded[modbus_chn_name + "_alarm"] = readAlarm(bytes[i++]);
+            }
+
+            if (channel_id === 0x89) {
+                decoded[modbus_chn_name + "_alarm"] = readAlarm(bytes[i++]);
+            }
+        }
+        // MODBUS READ ERROR(New Version)
+        else if (channel_id === 0xb9 && channel_type === 0xf3) {
+            var modbus_chn_id = bytes[i] + 1;
+            var modbus_chn_name = "modbus_chn_" + modbus_chn_id;
+            decoded[modbus_chn_name + "_exception"] = readException(bytes[i + 1]);
+            i += 2;
         }
         // HISTORY DATA (GPIO / ADC)
         else if (channel_id === 0x20 && channel_type === 0xdc) {
@@ -198,20 +253,8 @@ function milesightDeviceDecode(bytes) {
             var data = { timestamp: timestamp };
             data.gpio_1 = readUInt32LE(bytes.slice(i + 5, i + 9));
             data.gpio_2 = readUInt32LE(bytes.slice(i + 10, i + 14));
-
-            var data1 = readInt32LE(bytes.slice(i + 14, i + 18)) / 1000;
-            if (data1 === -65504) {
-                data.adc_1_error = "overload";
-            } else {
-                data.adc_1 = data1;
-            }
-
-            var data2 = readInt32LE(bytes.slice(i + 18, i + 22)) / 1000;
-            if (data2 === -65504) {
-                data.adc_2_error = "overload";
-            } else {
-                data.adc_2 = data2;
-            }
+            data.adc_1 = readInt32LE(bytes.slice(i + 14, i + 18)) / 1000;
+            data.adc_2 = readInt32LE(bytes.slice(i + 18, i + 22)) / 1000;
             i += 22;
 
             decoded.history = decoded.history || [];
@@ -237,8 +280,6 @@ function milesightDeviceDecode(bytes) {
         }
         // HISTORY DATA (MODBUS)
         else if (channel_id === 0x20 && channel_type === 0xdd) {
-            decoded.history = decoded.history || [];
-
             var timestamp = readUInt32LE(bytes.slice(i, i + 4));
             var channel_mask = numToBits(readUInt16LE(bytes.slice(i + 4, i + 6)), 16);
             i += 6;
@@ -249,12 +290,13 @@ function milesightDeviceDecode(bytes) {
                 if (channel_mask[j] === 0) continue;
 
                 var name = "modbus_chn_" + (j + 1);
-                var type = bytes[i++] & 0x07; // 0x07 = 0b00000111
+                var sign = bytes[i] >>> 7;
+                var data_type = bytes[i++] & 0x07; // 0x07 = 0b00000111
                 // 5 MB_REG_HOLD_FLOAT, 7 MB_REG_INPUT_FLOAT
-                if (type === 5 || type === 7) {
+                if (data_type === 5 || data_type === 7) {
                     data[name] = readFloatLE(bytes.slice(i, i + 4));
                 } else {
-                    data[name] = readUInt32LE(bytes.slice(i, i + 4));
+                    data[name] = sign ? readInt32LE(bytes.slice(i, i + 4)) : readUInt32LE(bytes.slice(i, i + 4));
                 }
 
                 i += 4;
@@ -339,10 +381,10 @@ function readString(bytes) {
     return str;
 }
 
-function includes(datas, value) {
-    var size = datas.length;
+function includes(items, item) {
+    var size = items.length;
     for (var i = 0; i < size; i++) {
-        if (datas[i] == value) {
+        if (items[i] == item) {
             return true;
         }
     }
@@ -351,10 +393,23 @@ function includes(datas, value) {
 
 function readAlarm(type) {
     switch (type) {
+        case 0:
+            return "threshold alarm release";
         case 1:
             return "threshold alarm";
         case 2:
             return "value change alarm";
+        default:
+            return "unknown";
+    }
+}
+
+function readException(type) {
+    switch (type) {
+        case 0:
+            return "read error";
+        case 1:
+            return "out of range";
         default:
             return "unknown";
     }
