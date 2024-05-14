@@ -162,11 +162,23 @@ function milesightDeviceDecode(bytes) {
                     decoded[chn + "_change"] = readUInt32LE(bytes.slice(i, i + 4));
                 }
                 i += 4;
-                decoded[chn + "_alarm"] = readAlarm(bytes[i++]);
+
+                var data = {};
+                data[chn] = decoded[chn];
+                data[chn + "_change"] = decoded[chn + "_change"];
+                data[chn + "_alarm"] = readAlarm(bytes[i++]);
+
+                decoded.modbus_event = decoded.modbus_event || [];
+                decoded.modbus_event.push(data);
             }
 
             if (channel_id === 0x80) {
-                decoded[chn + "_alarm"] = readAlarm(bytes[i++]);
+                var data = {};
+                data[chn] = decoded[chn];
+                data[chn + "_alarm"] = readAlarm(bytes[i++]);
+
+                decoded.modbus_event = decoded.modbus_event || [];
+                decoded.modbus_event.push(data);
             }
         }
         // MODBUS READ ERROR
@@ -232,18 +244,30 @@ function milesightDeviceDecode(bytes) {
                         i += 4;
                         break;
                 }
-                decoded[modbus_chn_name + "_alarm"] = readAlarm(bytes[i++]);
+
+                var data = {};
+                data[modbus_chn_name] = decoded[modbus_chn_name];
+                data[modbus_change_chn_name] = decoded[modbus_change_chn_name];
+                data[modbus_chn_name + "_alarm"] = readAlarm(bytes[i++]);
+
+                decoded.modbus_event = decoded.modbus_event || [];
+                decoded.modbus_event.push(data);
             }
 
             if (channel_id === 0x89) {
-                decoded[modbus_chn_name + "_alarm"] = readAlarm(bytes[i++]);
+                var data = {};
+                data[modbus_chn_name] = decoded[modbus_chn_name];
+                data[modbus_chn_name + "_alarm"] = readAlarm(bytes[i++]);
+
+                decoded.modbus_event = decoded.modbus_event || [];
+                decoded.modbus_event.push(data);
             }
         }
         // MODBUS READ ERROR(New Version)
         else if (channel_id === 0xb9 && channel_type === 0xf3) {
             var modbus_chn_id = bytes[i] + 1;
-            var modbus_chn_name = "modbus_chn_" + modbus_chn_id;
-            decoded[modbus_chn_name + "_exception"] = readException(bytes[i + 1]);
+            var modbus_chn_exception_name = "modbus_chn_" + modbus_chn_id + "_exception";
+            decoded[modbus_chn_exception_name] = readException(bytes[i + 1]);
             i += 2;
         }
         // HISTORY DATA (GPIO / ADC)
