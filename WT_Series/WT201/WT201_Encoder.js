@@ -964,7 +964,7 @@ function setWires(wires, mode) {
 
 /**
  * set ob directive mode
- * @param {string} ob_mode values: (0: "on cool", 1: "on heat")
+ * @param {string} ob_mode values: (0: "on heat", 1: "on cool")
  * @example { "ob_mode": 0 }
  */
 function setOBMode(ob_mode) {

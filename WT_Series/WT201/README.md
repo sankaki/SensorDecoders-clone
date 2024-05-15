@@ -24,7 +24,7 @@ For more detailed information, please visit Milesight official website(https://w
 | Plan Event               | 0x07 | 0xBC |   1    | plan_event(0..3)<br />plan_event, values: (0: not executed, 1: wake, 2: away, 3: home, 4: sleep)                                                                                                                                                                                                                                                                                                                      |
 | System Status            | 0x08 | 0x8E |   1    | system_status(1B)<br />system_status, values: (0: off, 1: on)                                                                                                                                                                                                                                                                                                                                                         |
 | Humidity                 | 0x09 | 0x68 |   1    | humidity(1B)<br />humidity, unit: %RH, read: int8/2                                                                                                                                                                                                                                                                                                                                                                   |
-| Wires Relay Status       | 0x0A | 0x6E |   2    | wire_relay_status(2B)                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Wires Relay Status       | 0x0A | 0x6E |   1    | wire_relay_status(1B)                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Plan                     | 0xFF | 0xC9 |   6    | type(1B) + index(1B) + plan_enable(1B) + week_recycle(1B) + time(1B)<br />type, values: (0: wake, 1: away, 2: home, 3: sleep)<br />index, range: [0, 15]<br />week_recycle, read: bits, (bit1: mon, bit2: tues, bit3: wed, bit4: thur, bit5: fri, bit6: sat, bit7: sun)<br />time, unit: mins                                                                                                                         |
 | Wires                    | 0xFF | 0xCA |   3    | value1(1B) + value2(1B) + value3(1B)<br />value1, bit0-bit1: y1, bit2-bit3: gh, bit4-bit5: o/b, bit6-bit7: w1<br />value2, bit0-bit1: e, bit2-bit3: di, bit4-bit5: pek, bit6-bit7: (1: w2, 2: aux)<br />value3, bit0-bit1: (1: y2, 2: gl), bit2-bit3: (0: cool, 1: heat)                                                                                                                                              |
 | Temperature Mode Support | 0xFF | 0xCB |   3    | mode_enable(1B) + heat_level_enable(1B) + cool_level_enable(1B)<br />mode_enable, read: bits, (bit0: heat, bit1: em heat, bit2: cool, bit3: auto)<br />heat_level_enable, read: bits, (bit0: stage-1 heat, bit1: stage-2 heat, bit2: stage-3 heat, bit3: stage-4 heat, bit4: aux heat)<br />cool_level_enable: read: bits, (bit0: stage-1 cool, bit1: stage-2 cool)                                                   |
@@ -50,17 +50,17 @@ For more detailed information, please visit Milesight official website(https://w
 
 #### WIRES-BYTE3
 
-| BITS |   7..4   |       3..2        | 1..0  |
-| :--: | :------: | :---------------: | :---: |
-| LINE | reserved | O/B: COOL or HEAT | Y2/GL |
+| BITS | 7..4 |       3..2        | 1..0  |
+| :--: | :--: | :---------------: | :---: |
+| LINE | RFU  | O/B: COOL or HEAT | Y2/GL |
 
 ### WIRE RELAY(2B)
 
 ```
-+----------+--------+--------+--------+--------+--------+--------+--------+
-| 15 ... 7 |    6   |    5   |    4   |    3   |    2   |    1   |    0   |
-+----------+--------+--------+--------+--------+--------+--------+--------+
-| reserved |   O/B  |    G   |    E   | W2/AUX |   W1   |  Y1/GL |   Y1   |
++-------+--------+--------+--------+--------+--------+--------+--------+
+|   7   |    6   |    5   |    4   |    3   |    2   |    1   |    0   |
++-------+--------+--------+--------+--------+--------+--------+--------+
+|  RFU  |   O/B  |    G   |    E   | W2/AUX |   W1   |  Y1/GL |   Y1   |
 
 ```
 

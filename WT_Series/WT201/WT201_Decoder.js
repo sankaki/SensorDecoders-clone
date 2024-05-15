@@ -75,9 +75,9 @@ function milesightDeviceDecode(bytes) {
         }
         // TEMPERATURE CONTROL
         else if (channel_id === 0x05 && channel_type === 0xe7) {
-            var value = bytes[i];
-            decoded.temperature_control_mode = readTemperatureCtlMode(value & 0x03);
-            decoded.temperature_control_status = readTemperatureCtlStatus((value >>> 4) & 0x0f);
+            var temperature_control = bytes[i];
+            decoded.temperature_control_mode = readTemperatureCtlMode(temperature_control & 0x03);
+            decoded.temperature_control_status = readTemperatureCtlStatus((temperature_control >>> 4) & 0x0f);
             i += 1;
         }
         // FAN CONTROL
@@ -104,9 +104,9 @@ function milesightDeviceDecode(bytes) {
             i += 1;
         }
         // RELAY STATUS
-        else if (channel_id === 0x0a && channel_type === 0x8f) {
-            decoded.wires_relay = readWiresRelay(bytes.slice(i, i + 2));
-            i += 2;
+        else if (channel_id === 0x0a && channel_type === 0x6e) {
+            decoded.wires_relay = readWiresRelay(bytes[i]);
+            i += 1;
         }
         // PLAN
         else if (channel_id === 0xff && channel_type === 0xc9) {
@@ -499,29 +499,17 @@ function readWires(wire1, wire2, wire3) {
     return wire;
 }
 
-function readWiresRelay(bytes) {
-    var relay = [];
-    if ((bytes[0] >>> 0) & 0x01) {
-        relay.push("Y1");
-    }
-    if ((bytes[0] >>> 1) & 0x01) {
-        relay.push("Y2/GL");
-    }
-    if ((bytes[0] >>> 2) & 0x01) {
-        relay.push("W1");
-    }
-    if ((bytes[0] >>> 3) & 0x01) {
-        relay.push("W2/AUX");
-    }
-    if ((bytes[0] >>> 4) & 0x01) {
-        relay.push("E");
-    }
-    if ((bytes[0] >>> 5) & 0x01) {
-        relay.push("G");
-    }
-    if ((bytes[0] >>> 6) & 0x01) {
-        relay.push("O/B");
-    }
+function readWiresRelay(status) {
+    var relay = {};
+    
+    relay.y1 = (status >>> 0) & 0x01;
+    relay.y2_gl = (status >>> 1) & 0x01;
+    relay.w1 = (status >>> 2) & 0x01;
+    relay.w2_aux = (status >>> 3) & 0x01;
+    relay.e = (status >>> 4) & 0x01;
+    relay.g = (status >>> 5) & 0x01;
+    relay.ob = (status >>> 6) & 0x01;
+
     return relay;
 }
 
