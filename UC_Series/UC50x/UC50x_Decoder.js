@@ -313,14 +313,28 @@ function milesightDeviceDecode(bytes) {
                 // skip if channel is not enabled
                 if (channel_mask[j] === 0) continue;
 
-                var name = "modbus_chn_" + (j + 1);
-                var sign = bytes[i] >>> 7;
-                var data_type = bytes[i++] & 0x07; // 0x07 = 0b00000111
-                // 5 MB_REG_HOLD_FLOAT, 7 MB_REG_INPUT_FLOAT
-                if (data_type === 5 || data_type === 7) {
-                    data[name] = readFloatLE(bytes.slice(i, i + 4));
-                } else {
-                    data[name] = sign ? readInt32LE(bytes.slice(i, i + 4)) : readUInt32LE(bytes.slice(i, i + 4));
+                var modbus_chn_name = "modbus_chn_" + (j + 1);
+                var modbus_data_type = readUInt8(bytes[i++]);
+                var sign = modbus_data_type >>> 7;
+                var data_type = modbus_data_type & 0x07; // 0x07 = 0b00000111
+
+                switch (data_type) {
+                    case 0:
+                    case 1:
+                        data[modbus_chn_name] = bytes[i];
+                        break;
+                    case 2:
+                    case 3:
+                        data[modbus_chn_name] = sign ? readInt16LE(bytes.slice(i, i + 2)) : readUInt16LE(bytes.slice(i, i + 2));
+                        break;
+                    case 4:
+                    case 6:
+                        data[modbus_chn_name] = sign ? readInt32LE(bytes.slice(i, i + 4)) : readUInt32LE(bytes.slice(i, i + 4));  
+                        break;
+                    case 5:
+                    case 7:
+                        data[modbus_chn_name] = readFloatLE(bytes.slice(i, i + 4));
+                        break;
                 }
 
                 i += 4;
